@@ -60,10 +60,11 @@ public class SqlBuilder {
 
         TableView tableView;
         if (!CollectionUtils.isEmpty(ontology.getJoinRelations()) && dataModels.size() > 1) {
-            Set<ModelResp> models = probeRelatedModels(dataModels, queryStatement.getOntology());
+            List<ModelResp> models = probeRelatedModels(dataModels, queryStatement.getOntology());
             tableView = render(ontologyQuery, models, scope, schema);
         } else {
-            tableView = render(ontologyQuery, dataModels, scope, schema);
+            // 由于 render 方法需要 List<ModelResp> 类型的参数，而 dataModels 是 Set<ModelResp> 类型，因此需要将其转换为 List<ModelResp>
+            tableView = render(ontologyQuery, new ArrayList<>(dataModels), scope, schema);
         }
 
         SqlNode parserNode = tableView.build();
@@ -79,7 +80,7 @@ public class SqlBuilder {
         return SemanticNode.getSql(parserNode, engineType);
     }
 
-    private Set<ModelResp> probeRelatedModels(Set<ModelResp> dataModels, Ontology ontology) {
+    private List<ModelResp> probeRelatedModels(Set<ModelResp> dataModels, Ontology ontology) {
         List<JoinRelation> joinRelations = ontology.getJoinRelations();
         Graph<String, DefaultEdge> graph = buildGraph(joinRelations);
         DijkstraShortestPath<String, DefaultEdge> dijkstraAlg = new DijkstraShortestPath<>(graph);
@@ -98,15 +99,17 @@ public class SqlBuilder {
             }
         }
         if (selectedGraphPath == null) {
-            return dataModels;
+            return new ArrayList<>(dataModels);
         }
-        Set<String> modelNames = Sets.newHashSet();
+        LinkedHashSet<String> modelNames = Sets.newLinkedHashSet();
+        // 按路径顺序添加模型
+        modelNames.add(selectedGraphPath.getStartVertex());
         for (DefaultEdge edge : selectedGraphPath.getEdgeList()) {
-            modelNames.add(selectedGraphPath.getGraph().getEdgeSource(edge));
             modelNames.add(selectedGraphPath.getGraph().getEdgeTarget(edge));
         }
-        return modelNames.stream().map(m -> ontology.getModelMap().get(m))
-                .collect(Collectors.toSet());
+        return modelNames.stream()
+                .map(m -> ontology.getModelMap().get(m))
+                .collect(Collectors.toList());
     }
 
     private boolean isGraphPathContainsAll(GraphPath<String, DefaultEdge> graphPath,
@@ -154,7 +157,7 @@ public class SqlBuilder {
         return parserNode;
     }
 
-    private TableView render(OntologyQuery ontologyQuery, Set<ModelResp> dataModels,
+    private TableView render(OntologyQuery ontologyQuery, List<ModelResp> dataModels,
             SqlValidatorScope scope, S2CalciteSchema schema) throws Exception {
         SqlNode left = null;
         TableView leftTable = null;
