@@ -22,3 +22,5 @@ __pycache__/
 assembly/build/*-SNAPSHOT
 **/node_modules/
 benchmark/res/
+webapp/package.json
+webapp/pnpm-lock.yaml

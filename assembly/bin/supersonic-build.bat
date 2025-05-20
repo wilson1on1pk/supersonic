@@ -78,13 +78,27 @@ if "%service%"=="webapp" (
    move /y supersonic-webapp webapp
    echo {"env": ""} > webapp\supersonic.config.json
    move /y webapp %release_dir%
-   rem package java service
+   rem package java service - 添加重试逻辑
+   set "max_retry=3"
+   set "retry_count=0"
+   :retry_package
    tar xvf %service_name%-bin.tar.gz
    for /d %%D in ("%service_name%\*") do (
-       move "%%D" "%release_dir%"
+      taskkill /f /im java.exe >nul 2>&1
+      robocopy "%%D" "%release_dir%\%%~nxD" /e /move /r:3 /w:1 /IS /IT /COPYALL >nul
    )
+   if exist "%release_dir%\lib\hadoop-hdfs-2.7.2.jar" (
+      goto package_success
+   ) else (
+      set /a retry_count+=1
+      if !retry_count! leq %max_retry% (
+         timeout /t 5 >nul
+         goto retry_package
+      )
+   )
+   :package_success
    rem generate zip file
-   powershell Compress-Archive -Path %release_dir% -DestinationPath %release_dir%.zip
+   powershell -Command "$maxAttempts=3; $attempt=1; do { try { Compress-Archive -Path %release_dir% -DestinationPath %release_dir%.zip -ErrorAction Stop; $success=$true } catch { if ($attempt -eq $maxAttempts) { throw } Start-Sleep -Seconds 2; $attempt++ } } while (-not $success)"
    del %service_name%-bin.tar.gz
    del supersonic-webapp.tar.gz
    rmdir /s /q %service_name%
