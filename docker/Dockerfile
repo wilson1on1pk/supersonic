@@ -28,7 +28,7 @@ COPY --from=base /usr/src/app/supersonic-standalone-${SUPERSONIC_VERSION} ./supe
 RUN ln -s /usr/src/app/supersonic-standalone-${SUPERSONIC_VERSION} /usr/src/app/supersonic-standalone-latest
 
 # Set the working directory to the supersonic installation directory
-WORKDIR /usr/src/app/supersonic-standalone-${SUPERSONIC_VERSION}
+WORKDIR /usr/src/app/supersonic-standalone-latest
 
 # Expose the default port
 EXPOSE 9080
