@@ -102,6 +102,7 @@ const ChatItem: React.FC<Props> = ({
     {}
   );
   const [isParserError, setIsParseError] = useState<boolean>(false);
+
   const resetState = () => {
     setParseLoading(false);
     setParseTimeCost(undefined);
@@ -440,8 +441,6 @@ const ChatItem: React.FC<Props> = ({
 
   const { register, call } = useMethodRegister(() => message.error('该条消息暂不支持该操作'));
 
-  let actualQueryText=parseInfo?.properties.CONTEXT.queryText // lance修改 结果显示多轮对话转义的内容
-  actualQueryText=actualQueryText==null?msg:actualQueryText
   return (
     <ChartItemContext.Provider value={{ register, call }}>
       <div className={prefixCls}>
@@ -510,7 +509,7 @@ const ChatItem: React.FC<Props> = ({
                       <SqlItem
                         agentId={agentId}
                         queryId={parseInfo.queryId}
-                        question={actualQueryText}
+                        question={msg}
                         llmReq={llmReq}
                         llmResp={llmResp}
                         integrateSystem={integrateSystem}
@@ -523,7 +522,7 @@ const ChatItem: React.FC<Props> = ({
                   <ExecuteItem
                     isSimpleMode={isSimpleMode}
                     queryId={parseInfo?.queryId}
-                    question={actualQueryText}
+                    question={msg}
                     queryMode={parseInfo?.queryMode}
                     executeLoading={executeLoading}
                     executeTip={executeTip}
